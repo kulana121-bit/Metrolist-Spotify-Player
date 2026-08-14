@@ -33,10 +33,26 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+          - name: Create Android debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair \
+            -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
       - name: Make Gradle executable
         run: chmod +x "$PROJECT_DIR/gradlew"
 
       - name: Build APK
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: ./gradlew :app:assembleFossDebug --no-daemon
         working-directory: ${{ env.PROJECT_DIR }}
         run: ./gradlew :app:assembleFossDebug --no-daemon
 
