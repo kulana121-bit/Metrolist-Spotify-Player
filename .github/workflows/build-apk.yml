@@ -12,22 +12,36 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Find and extract project ZIP
+        run: |
+          ZIP=$(find . -maxdepth 2 -type f -name "*.zip" | head -n 1)
+          echo "Found ZIP: $ZIP"
+          unzip -q "$ZIP" -d extracted
+
+      - name: Locate Gradle project
+        run: |
+          GRADLEW=$(find extracted -type f -name "gradlew" | head -n 1)
+          echo "Found Gradle wrapper: $GRADLEW"
+          PROJECT_DIR=$(dirname "$GRADLEW")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Make Gradle executable
-        run: chmod +x gradlew
+        run: chmod +x "$PROJECT_DIR/gradlew"
 
       - name: Build APK
+        working-directory: ${{ env.PROJECT_DIR }}
         run: ./gradlew :app:assembleFossDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Metrolist-Spotify-Player
-          path: app/build/outputs/apk/foss/debug/*.apk
+          path: "**/app/build/outputs/apk/foss/debug/*.apk"
